@@ -92,10 +92,38 @@ where
 
 So this way it's easy to join in information on where a particular cim conducting equipment is feeder from. As you can see from the fields in flat_feeder_info, it's possible to join in information all they way up to the external network injection. Of course that would require that the network model extracted from GIS contains such details.
 
+## Example how to query number of installations grouped by cabinet and secondary substations
 
+```sql
+select 
+  secondary_substation.name as substation, 
+  cabinet.name as cabinet,
+  count(*) as installation_count
+from
+  cimflow.usage_point up
+left outer join
+  cimflow.energy_consumer ec on ec.mrid = up.equipments
+left outer join
+  cimflow.flat_feeder_info fi on fi.equipment_mrid = ec.mrid
+left outer join
+  cimflow.substation secondary_substation on secondary_substation.mrid = secondary_substation_mrid
+left outer join
+  cimflow.substation cabinet on cabinet.mrid = cable_box_mrid
+where
+  fi.switch_state_type = 'GIS' and 
+  fi.nofeed = false and
+  fi.multifeed = false
+group by
+  secondary_substation.name, 
+  cabinet.name
+order by
+  secondary_substation.name, 
+  cabinet.name
+```
 
+![image](https://github.com/user-attachments/assets/8fb6aad1-c228-4cdb-81fb-f81379d5fdc4)
 
-
+As you can see in the result, there are some rows where cabinet is null. It's installationes that are connected directly to a secondary substation and not trough a street cabinet.
 
 
 
