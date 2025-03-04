@@ -31,7 +31,7 @@ select * from cimflow.ac_line_segment_ext where mrid = '8b7faf52-10bc-4ad2-8901-
 ![image](https://github.com/user-attachments/assets/eb28d782-1805-4d94-8fee-29e7aa4a2a0a)
 
 Now, let's try find it in the flat_feeder_info table:
-```
+```sql
 select * from cimflow.flat_feeder_info where equipment_mrid = '8b7faf52-10bc-4ad2-8901-51c470d87037' and switch_state_type = 'GIS'
 ```
 ![image](https://github.com/user-attachments/assets/f9cae78e-7335-4800-9c25-61374c61be92)
@@ -124,6 +124,50 @@ order by
 ![image](https://github.com/user-attachments/assets/8fb6aad1-c228-4cdb-81fb-f81379d5fdc4)
 
 As you can see in the result, there are some rows where cabinet is null. It's installationes that are connected directly to a secondary substation and not trough a street cabinet.
+
+Finally let's create a query that finds alle usage points in the network, and joins all information where they are feeder from all the way op to the external injection points. Notice, that the external network injection is uncommented because some network don't have these registered in GIS. If you have them, comment them in.
+
+```sql
+select 
+  -- ext_net.name as ext_net_name,
+  pri_st_trf.name as primary_st_trf_name, 
+  pri_st_bay.name as primary_st_bay_name, 
+  pri_st.name as primary_st_name, 
+  sec_st_trf.name as secondary_st_trf_name, 
+  sec_st_bay.name as secondary_st_bay_name, 
+  sec_st.name as secondary_st_name, 
+  cabinet.name as cabinet_name,
+  up.name
+from
+  cimflow.usage_point up
+left outer join
+  cimflow.energy_consumer ec on ec.mrid = up.equipments
+left outer join
+  cimflow.flat_feeder_info fi on fi.equipment_mrid = ec.mrid
+left outer join
+  cimflow.substation cabinet on cabinet.mrid = cable_box_mrid
+left outer join
+  cimflow.power_transformer sec_st_trf on sec_st_trf.mrid = secondary_substation_transformer_mrid
+left outer join
+  cimflow.bay_ext sec_st_bay on sec_st_bay.mrid = secondary_substation_bay_mrid
+left outer join
+  cimflow.substation sec_st on sec_st.mrid = secondary_substation_mrid
+left outer join
+  cimflow.power_transformer pri_st_trf on pri_st_trf.mrid = primary_substation_transformer_mrid
+left outer join
+  cimflow.bay_ext pri_st_bay on pri_st_bay.mrid = primary_substation_bay_mrid
+left outer join
+  cimflow.substation pri_st on pri_st.mrid = primary_substation_mrid
+--left outer join
+--  cimflow.external_network_injection ext_net on ext_net.mrid = network_injection_mrid	
+where
+  fi.switch_state_type = 'GIS' and 
+  fi.nofeed = false and
+  fi.multifeed = false
+order by
+  sec_st.name, 
+  cabinet.name
+```
 
 
 
