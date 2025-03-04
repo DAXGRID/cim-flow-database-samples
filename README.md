@@ -165,7 +165,10 @@ where
   fi.nofeed = false and
   fi.multifeed = false
 order by
+  pri_st.name,
+  pri_st_bay.name,
   sec_st.name, 
+  sec_st_bay.name, 
   cabinet.name
 ```
 
